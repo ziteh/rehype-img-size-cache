@@ -1,0 +1,65 @@
+{
+  "name": "@ziteh/rehype-img-size-cache",
+  "version": "0.1.0",
+  "description": "A rehype plugin that automatically adds width and height attributes to <img> with caching support",
+  "author": "ZiTe <honmonoh@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "rehype",
+    "rehype-plugin",
+    "image"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ziteh/rehype-img-size-cache.git"
+  },
+  "homepage": "https://github.com/ziteh/rehype-img-size-cache#readme",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "format": "prettier --write ."
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "packageManager": "pnpm@10.12.1",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "image-size": "^2.0.2",
+    "unist-util-visit": "^5.0.0",
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/hast": "^3.0.4",
+    "@types/node": "^22.15.30",
+    "@types/unist": "^3.0.3",
+    "prettier": "3.5.3",
+    "rehype": "^13.0.2",
+    "rehype-stringify": "^10.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  },
+  "peerDependencies": {
+    "unified": "^11.0.0"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}
