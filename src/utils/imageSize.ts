@@ -3,10 +3,11 @@ import path from 'node:path';
 import sizeOf from 'image-size';
 import axios from 'axios';
 import { ImageSize } from '../types';
+import { isRemoteUrl } from './urlResolver';
 
 export async function getImageSize(src: string): Promise<ImageSize | null> {
   try {
-    const isUrl = /^https?:\/\//.test(src);
+    const isUrl = isRemoteUrl(src);
     let dimensions;
 
     if (isUrl) {

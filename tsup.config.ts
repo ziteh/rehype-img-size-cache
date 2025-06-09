@@ -13,4 +13,5 @@ export default defineConfig({
   bundle: true,
   minify: true,
   treeshake: true,
+  cjsInterop: true,
 });

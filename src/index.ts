@@ -2,6 +2,7 @@ import { visit } from 'unist-util-visit';
 import { resolve } from 'node:path';
 import { getImageSize } from './utils/imageSize';
 import { readCache, writeCache } from './utils/cache';
+import { isRemoteUrl, shouldSkipUrl } from './utils/urlResolver';
 import type { RehypeImgSizeCacheOptions } from './types';
 import type { Node } from 'unist';
 import type { Element } from 'hast';
@@ -24,23 +25,26 @@ export default function rehypeImgSizeCache(
     visit(tree, 'element', (node: Element) => {
       if (node.tagName === 'img' && node.properties?.src) {
         const src = node.properties.src as string;
-        // Skip data URLs and other non-standard URLs
-        if (!src.startsWith('data:') && !src.startsWith('blob:')) {
-          imagesToProcess.push({ node, src });
+
+        // Skip data URLs and blob URLs (cannot be processed)
+        if (shouldSkipUrl(src)) {
+          return;
         }
+
+        // Skip remote images if processRemoteImages is false
+        const isRemoteImage = isRemoteUrl(src);
+        if (isRemoteImage && !processRemoteImages) {
+          return;
+        }
+
+        // Only process images that we can handle
+        imagesToProcess.push({ node, src });
       }
     });
 
     // Process each image
     for (const { node, src } of imagesToProcess) {
       try {
-        const isRemoteImage = /^https?:\/\//.test(src);
-
-        // Skip remote images if processRemoteImages is false
-        if (isRemoteImage && !processRemoteImages) {
-          continue;
-        }
-
         if (cache[src]) {
           // Read size from cache
           node.properties = node.properties || {};
