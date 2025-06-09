@@ -31,15 +31,34 @@ console.log(result.toString());
 Output:
 
 ```html
-<img src="https://example.com/full-hd.jpg" alt="Example" width="1920" height="1080">
+<img
+  src="https://example.com/full-hd.jpg"
+  alt="Example"
+  width="1920"
+  height="1080"
+/>
 ```
 
 ## Options
 
-| Option                | Type      | Default                    | Description                                   |
-| --------------------- | --------- | -------------------------- | --------------------------------------------- |
-| `cacheFilePath`       | `string`  | `'cache/image-sizes.yaml'` | Path to the cache file                        |
-| `processRemoteImages` | `boolean` | `true`                     | Whether to process remote images (HTTP/HTTPS) |
+```ts
+interface RehypeImgSizeCacheOptions {
+  cacheFilePath?: string;
+  processRemoteImages?: boolean;
+}
+
+declare function rehypeImgSizeCache(
+  options?: RehypeImgSizeCacheOptions,
+): (tree: Node) => Promise<void>;
+```
+
+### `cacheFilePath?`
+
+Path to the cache file. Default is `'cache/image-sizes.yaml'`.
+
+### `processRemoteImages?`
+
+Whether to process remote images (HTTP/HTTPS). Default is `true`.
 
 ## Cache Format
 
@@ -63,3 +82,9 @@ pnpm build
 
 pnpm test
 ```
+
+## Related
+
+- [ksoichiro/rehype-img-size: rehype plugin to set local image size properties to img tag.](https://github.com/ksoichiro/rehype-img-size)
+- [potato4d/rehype-plugin-auto-resolve-layout-shift: Flexible improve CLS plugin for rehype.](https://github.com/potato4d/rehype-plugin-auto-resolve-layout-shift)
+- [theMosaad/rehype-external-img-size: rehype plugin to add width and height attributes to external images](https://github.com/theMosaad/rehype-external-img-size)
