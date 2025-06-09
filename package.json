@@ -1,6 +1,6 @@
 {
   "name": "@ziteh/rehype-img-size-cache",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A rehype plugin that automatically adds width and height attributes to <img> with caching support",
   "author": "ZiTe <honmonoh@gmail.com>",
   "license": "MIT",
@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ziteh/rehype-img-size-cache.git"
+    "url": "git+https://github.com/ziteh/rehype-img-size-cache.git"
   },
   "homepage": "https://github.com/ziteh/rehype-img-size-cache#readme",
   "scripts": {
@@ -19,7 +19,9 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest watch",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "publish": "pnpm build && npm publish --access public",
+    "publish:check": "pnpm build && npm pack --dry-run"
   },
   "engines": {
     "node": ">=16"

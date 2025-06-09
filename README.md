@@ -4,6 +4,16 @@ A [rehype](https://github.com/rehypejs/rehype) plugin that automatically adds `w
 
 Helps improve Cumulative Layout Shift (CLS).
 
+## Install
+
+```bash
+npm i @ziteh/rehype-img-size-cache
+
+# or
+
+pnpm add @ziteh/rehype-img-size-cache
+```
+
 ## Usage
 
 ```js
