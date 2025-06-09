@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import sizeOf from 'image-size';
 import axios from 'axios';
-import { ImageSize } from '../types';
 import { isRemoteUrl } from './urlResolver';
+import type { ImageSize } from '../types';
 
 export async function getImageSize(src: string): Promise<ImageSize | null> {
   try {
