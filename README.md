@@ -1,4 +1,4 @@
-# rehype-image-size-cache Plugin
+# rehype-img-size-cache Plugin
 
 A [rehype](https://github.com/rehypejs/rehype) plugin that automatically adds `width` and `height` attributes to `<img>` with caching support, includes local and remote images.
 
@@ -21,7 +21,7 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
-import rehypeImgSizeCache from 'rehype-img-size-cache';
+import rehypeImgSizeCache from '@ziteh/rehype-img-size-cache';
 
 const processor = unified()
   .use(remarkParse)
