@@ -22,7 +22,7 @@ function objectToArray(cache: ImageSizeCache): ImageSizeCacheArray {
   }));
 }
 
-export function readCache(cacheFilePath: string): ImageSizeCache {
+function readCacheFromFile(cacheFilePath: string): ImageSizeCache {
   try {
     if (fs.existsSync(cacheFilePath)) {
       const fileContents = fs.readFileSync(cacheFilePath, 'utf8');
@@ -41,7 +41,7 @@ export function readCache(cacheFilePath: string): ImageSizeCache {
   return {};
 }
 
-export function writeCache(cacheFilePath: string, cache: ImageSizeCache): void {
+function writeCacheToFile(cacheFilePath: string, cache: ImageSizeCache): void {
   try {
     const dir = path.dirname(cacheFilePath);
     if (!fs.existsSync(dir)) {
@@ -57,4 +57,45 @@ export function writeCache(cacheFilePath: string, cache: ImageSizeCache): void {
       error instanceof Error ? error.message : String(error),
     );
   }
+}
+
+export function readCache(cacheFilePath: string): ImageSizeCache {
+  return readCacheFromFile(cacheFilePath);
+}
+
+/**
+ * Thread-safe cache update function
+ * Reads the latest cache from file, merges with new entries, and writes back
+ * @returns true if update was successful, false otherwise
+ */
+export function updateCache(
+  cacheFilePath: string,
+  newEntries: ImageSizeCache,
+): boolean {
+  try {
+    const dir = path.dirname(cacheFilePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Read the latest cache from file to get any updates from other processes
+    const latestCache = readCacheFromFile(cacheFilePath);
+
+    // Merge new entries with latest cache
+    const mergedCache = { ...latestCache, ...newEntries };
+
+    // Write the merged cache back to file
+    writeCacheToFile(cacheFilePath, mergedCache);
+    return true;
+  } catch (error) {
+    console.warn(
+      'Error updating cache file:',
+      error instanceof Error ? error.message : String(error),
+    );
+    return false;
+  }
+}
+
+export function writeCache(cacheFilePath: string, cache: ImageSizeCache): void {
+  writeCacheToFile(cacheFilePath, cache);
 }

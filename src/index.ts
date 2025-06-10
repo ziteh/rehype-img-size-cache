@@ -1,7 +1,7 @@
 import { visit } from 'unist-util-visit';
 import { resolve } from 'node:path';
 import { getImageSize } from './utils/imageSize';
-import { readCache, writeCache } from './utils/cache';
+import { readCache, updateCache } from './utils/cache';
 import { isRemoteUrl, shouldSkipUrl } from './utils/urlResolver';
 import type { RehypeImgSizeCacheOptions } from './types';
 import type { Node } from 'unist';
@@ -17,7 +17,9 @@ export default function rehypeImgSizeCache(
 
   return async (tree: Node) => {
     const cache = readCache(cacheFilePath);
-    let cacheUpdated = false;
+    const newCacheEntries: {
+      [url: string]: { width: number; height: number };
+    } = {};
 
     // Collect all images to process
     const imagesToProcess: Array<{ node: Element; src: string }> = [];
@@ -60,8 +62,7 @@ export default function rehypeImgSizeCache(
             node.properties = node.properties || {};
             node.properties.width = size.width;
             node.properties.height = size.height;
-            cache[src] = size;
-            cacheUpdated = true;
+            newCacheEntries[src] = size;
             console.log(
               `Fetched and cached image size: ${src} (${size.width}x${size.height})`,
             );
@@ -77,10 +78,12 @@ export default function rehypeImgSizeCache(
       }
     }
 
-    // If cache is updated, write to file
-    if (cacheUpdated) {
-      writeCache(cacheFilePath, cache);
-      console.log(`Cache updated and saved to: ${cacheFilePath}`);
+    // If we have new cache entries, update the cache file (thread-safe)
+    if (Object.keys(newCacheEntries).length > 0) {
+      const success = updateCache(cacheFilePath, newCacheEntries);
+      if (success) {
+        console.log(`Cache updated and saved to: ${cacheFilePath}`);
+      }
     }
   };
 }

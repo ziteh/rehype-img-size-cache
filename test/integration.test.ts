@@ -26,7 +26,16 @@ describe('rehype-img-size-cache integration tests', () => {
     // Mock readCache() to return our mock cache
     vi.mocked(cacheUtils.readCache).mockImplementation(() => mockCache);
 
-    // Mock writeCache() to simulate cache writing
+    // Mock updateCache() to simulate cache updating
+    vi.mocked(cacheUtils.updateCache).mockImplementation(
+      (_path, newEntries) => {
+        Object.assign(mockCache, newEntries);
+        cacheUpdated = true;
+        return true;
+      },
+    );
+
+    // Mock writeCache() to simulate cache writing (still needed for some tests)
     vi.mocked(cacheUtils.writeCache).mockImplementation((_path, cache) => {
       Object.assign(mockCache, cache);
       cacheUpdated = true;

@@ -1,6 +1,6 @@
 {
   "name": "@ziteh/rehype-img-size-cache",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A rehype plugin that automatically adds width and height attributes to <img> with caching support",
   "author": "ZiTe <honmonoh@gmail.com>",
   "license": "MIT",
