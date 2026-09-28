@@ -15,7 +15,16 @@ export interface ImageSizeCache {
 
 export type ImageSizeCacheArray = CacheEntry[];
 
+export interface SrcsetOptions {
+  widths: number[];
+  url: (src: string, width: number) => string;
+  match?: (src: string) => boolean;
+  sizes?: string;
+}
+
 export interface RehypeImgSizeCacheOptions {
   cacheFilePath?: string;
   processRemoteImages?: boolean;
+  verbose?: boolean;
+  srcset?: SrcsetOptions;
 }

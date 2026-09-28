@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
@@ -132,7 +133,53 @@ describe('rehype-img-size-cache integration tests', () => {
     expect(imageSizeUtils.getImageSize).toHaveBeenCalledTimes(1);
     expect(imageSizeUtils.getImageSize).toHaveBeenCalledWith(
       'https://picsum.photos/800/200',
+      expect.any(String),
     );
+  });
+
+  test('Should not log cache hits by default (verbose: false)', async () => {
+    mockCache['https://cached-image.jpg'] = { width: 1200, height: 800 };
+
+    const markdown = `![cached img](https://cached-image.jpg)`;
+
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, { cacheFilePath: './mock-cache.yaml' })
+      .use(rehypeStringify);
+
+    await processor.process(markdown);
+
+    expect(consoleSpy).not.toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
+  });
+
+  test('Should log cache hits when verbose is true', async () => {
+    mockCache['https://cached-image.jpg'] = { width: 1200, height: 800 };
+
+    const markdown = `![cached img](https://cached-image.jpg)`;
+
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, {
+        cacheFilePath: './mock-cache.yaml',
+        verbose: true,
+      })
+      .use(rehypeStringify);
+
+    await processor.process(markdown);
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Read size from cache'),
+    );
+
+    consoleSpy.mockRestore();
   });
 
   test('Should skip remote images when processRemoteImages is false.', async () => {
@@ -164,6 +211,7 @@ describe('rehype-img-size-cache integration tests', () => {
     expect(imageSizeUtils.getImageSize).toHaveBeenCalledTimes(1);
     expect(imageSizeUtils.getImageSize).toHaveBeenCalledWith(
       './local-image.jpg',
+      expect.any(String),
     );
   });
 
@@ -190,6 +238,7 @@ describe('rehype-img-size-cache integration tests', () => {
     expect(imageSizeUtils.getImageSize).toHaveBeenCalledTimes(1);
     expect(imageSizeUtils.getImageSize).toHaveBeenCalledWith(
       'https://example.com/normal.jpg',
+      expect.any(String),
     );
 
     // Only the normal image should have width and height attributes
@@ -326,5 +375,198 @@ Ref: ![final img](https://example.com/final.jpg)
     expect(cacheUtils.readCache).toHaveBeenCalledWith(
       expect.stringMatching(/cache[\/\\]image-sizes\.yaml$/),
     );
+  });
+
+  test('Should generate srcset with widths smaller than the original, ending with the original width', async () => {
+    const markdown = `![img](https://example.com/image-600x400.jpg)`;
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, {
+        cacheFilePath: './mock-cache.yaml',
+        srcset: {
+          widths: [200, 400, 600, 800],
+          url: (src: string, width: number) => `${src}?w=${width}`,
+        },
+      })
+      .use(rehypeStringify);
+
+    const result = await processor.process(markdown);
+    const html = result.toString();
+
+    expect(html).toContain(
+      'srcset="https://example.com/image-600x400.jpg?w=200 200w, https://example.com/image-600x400.jpg?w=400 400w, https://example.com/image-600x400.jpg 600w"',
+    );
+  });
+
+  test('Should output the sizes attribute when provided', async () => {
+    const markdown = `![img](https://example.com/image-600x400.jpg)`;
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, {
+        cacheFilePath: './mock-cache.yaml',
+        srcset: {
+          widths: [200, 400],
+          url: (src: string, width: number) => `${src}?w=${width}`,
+          sizes: '(max-width: 600px) 100vw, 600px',
+        },
+      })
+      .use(rehypeStringify);
+
+    const result = await processor.process(markdown);
+    const html = result.toString();
+
+    expect(html).toContain('sizes="(max-width: 600px) 100vw, 600px"');
+  });
+
+  test('Should exclude images that do not satisfy the match predicate', async () => {
+    const markdown = `
+![matched](https://example.com/image-600x400.jpg)
+![unmatched](https://picsum.photos/400/300)
+`;
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, {
+        cacheFilePath: './mock-cache.yaml',
+        srcset: {
+          widths: [200, 400],
+          url: (src: string, width: number) => `${src}?w=${width}`,
+          match: (src: string) => src.includes('example.com'),
+        },
+      })
+      .use(rehypeStringify);
+
+    const result = await processor.process(markdown);
+    const html = result.toString();
+
+    expect(html).toContain('image-600x400.jpg?w=200');
+    expect(html).not.toContain('picsum.photos/400/300?w=');
+  });
+
+  test('Should not output srcset for images without a resolved size', async () => {
+    const markdown = `![invalid img](https://example.com/invalid-image.jpg)`;
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, {
+        cacheFilePath: './mock-cache.yaml',
+        srcset: {
+          widths: [200, 400],
+          url: (src: string, width: number) => `${src}?w=${width}`,
+        },
+      })
+      .use(rehypeStringify);
+
+    const result = await processor.process(markdown);
+    const html = result.toString();
+
+    expect(html).not.toContain('srcset');
+  });
+
+  test('Should resolve local relative paths against the source file location', async () => {
+    const markdown = `![img](./local-image.jpg)`;
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, {
+        cacheFilePath: './mock-cache.yaml',
+        processRemoteImages: true,
+      })
+      .use(rehypeStringify);
+
+    await processor.process({
+      value: markdown,
+      path: '/posts/my-post/index.md',
+    });
+
+    expect(imageSizeUtils.getImageSize).toHaveBeenCalledWith(
+      './local-image.jpg',
+      '/posts/my-post',
+    );
+  });
+
+  test('Should cache same-named local paths from different articles under different keys', async () => {
+    const markdown = `![img](./local-image.jpg)`;
+
+    const processor = () =>
+      unified()
+        .use(remarkParse)
+        .use(remarkRehype)
+        .use(rehypeImgSizeCache, { cacheFilePath: './mock-cache.yaml' })
+        .use(rehypeStringify);
+
+    await processor().process({
+      value: markdown,
+      path: '/posts/post-a/index.md',
+    });
+    await processor().process({
+      value: markdown,
+      path: '/posts/post-b/index.md',
+    });
+
+    expect(imageSizeUtils.getImageSize).toHaveBeenCalledTimes(2);
+    expect(imageSizeUtils.getImageSize).toHaveBeenCalledWith(
+      './local-image.jpg',
+      '/posts/post-a',
+    );
+    expect(imageSizeUtils.getImageSize).toHaveBeenCalledWith(
+      './local-image.jpg',
+      '/posts/post-b',
+    );
+    expect(Object.keys(mockCache)).toHaveLength(2);
+    expect(Object.keys(mockCache).some((key) => key.includes('post-a'))).toBe(
+      true,
+    );
+    expect(Object.keys(mockCache).some((key) => key.includes('post-b'))).toBe(
+      true,
+    );
+  });
+
+  test('Should prefix a dot-directory local path with ./ in the cache key', async () => {
+    const markdown = `![img](./.assets/local-image.jpg)`;
+    const postDir = path.join(process.cwd(), 'posts', 'my-post');
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, { cacheFilePath: './mock-cache.yaml' })
+      .use(rehypeStringify);
+
+    await processor.process({
+      value: markdown,
+      path: path.join(postDir, 'index.md'),
+    });
+
+    const keys = Object.keys(mockCache);
+    expect(keys).toHaveLength(1);
+    expect(keys[0]).toMatch(/^\.\//);
+    expect(keys[0]).not.toMatch(/^\.\.\//);
+  });
+
+  test('Should only fetch a repeated src once per document', async () => {
+    const markdown = `
+![img1](https://picsum.photos/400/300)
+![img2](https://picsum.photos/400/300)
+`;
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      .use(rehypeImgSizeCache, { cacheFilePath: './mock-cache.yaml' })
+      .use(rehypeStringify);
+
+    const result = await processor.process(markdown);
+    const html = result.toString();
+
+    expect(imageSizeUtils.getImageSize).toHaveBeenCalledTimes(1);
+    expect(html.match(/width="400"/g)).toHaveLength(2);
+    expect(html.match(/height="300"/g)).toHaveLength(2);
   });
 });

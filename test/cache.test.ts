@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { readCache, writeCache, updateCache } from '../src/utils/cache';
+import {
+  readCache,
+  writeCache,
+  updateCache,
+  clearProcessCache,
+} from '../src/utils/cache';
 import { ImageSizeCache } from '../src/types';
 
 // Mock fs and path modules
@@ -11,6 +16,7 @@ vi.mock('node:path');
 describe('Cache utility function tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearProcessCache();
   });
 
   describe('readCache', () => {
@@ -262,6 +268,25 @@ describe('Cache utility function tests', () => {
       );
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('process-level memoization', () => {
+    test('Should only read the file once when the same path is used repeatedly', () => {
+      const mockYamlContent = `
+- url: https://example.com/image1.jpg
+  width: 400
+  height: 300
+`;
+
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockYamlContent);
+
+      readCache('/mock/cache.yaml');
+      readCache('/mock/cache.yaml');
+      readCache('/mock/cache.yaml');
+
+      expect(fs.readFileSync).toHaveBeenCalledTimes(1);
     });
   });
 });

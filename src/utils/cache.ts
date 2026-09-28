@@ -59,8 +59,19 @@ function writeCacheToFile(cacheFilePath: string, cache: ImageSizeCache): void {
   }
 }
 
+const processCache = new Map<string, ImageSizeCache>();
+
+export function clearProcessCache(): void {
+  processCache.clear();
+}
+
 export function readCache(cacheFilePath: string): ImageSizeCache {
-  return readCacheFromFile(cacheFilePath);
+  let cache = processCache.get(cacheFilePath);
+  if (!cache) {
+    cache = readCacheFromFile(cacheFilePath);
+    processCache.set(cacheFilePath, cache);
+  }
+  return cache;
 }
 
 /**
@@ -86,6 +97,7 @@ export function updateCache(
 
     // Write the merged cache back to file
     writeCacheToFile(cacheFilePath, mergedCache);
+    processCache.set(cacheFilePath, mergedCache);
     return true;
   } catch (error) {
     console.warn(

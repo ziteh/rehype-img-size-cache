@@ -9,7 +9,7 @@ export default defineConfig({
   clean: true,
   outDir: 'dist',
   external: ['unified'],
-  target: 'node16',
+  target: 'node18',
   bundle: true,
   minify: true,
   treeshake: true,
