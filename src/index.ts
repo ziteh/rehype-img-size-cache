@@ -23,6 +23,10 @@ function applySrcset(
   }
 
   const variantWidths = srcset.widths.filter((width) => width < size.width);
+  if (variantWidths.length === 0) {
+    return;
+  }
+
   const srcSet = [
     ...variantWidths.map((width) => `${srcset.url(src, width)} ${width}w`),
     `${src} ${size.width}w`,

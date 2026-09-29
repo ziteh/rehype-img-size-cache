@@ -125,7 +125,8 @@ dimensions are known.
 - `match?`: restricts which images get a `srcset`. Defaults to all images.
 - `sizes?`: written as-is to the `sizes` attribute.
 
-Images whose dimensions can't be determined are left without a `srcset`.
+Images whose dimensions can't be determined, or that have no `widths` smaller
+than their original width, are left without `srcset` and `sizes`.
 
 ## Local image paths
 
